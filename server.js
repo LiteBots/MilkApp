@@ -12,35 +12,35 @@ const PORT = Number(process.env.PORT || 3000);
 /* ======================================================
    MIDDLEWARE
 ====================================================== */
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // PWA-friendly
+  })
+);
 app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("tiny"));
 
 /* ======================================================
-   PLACEHOLDER – DB (NA RAZIE NIE PODPINAMY)
+   PLACEHOLDER – DATABASE (NA RAZIE NIE AKTYWNA)
    ------------------------------------------------------
-   Docelowo:
-   - MongoDB / Mongoose
-   - Kolekcje JUŻ ISTNIEJĄ:
-       • users
-       • reservations
-       • orders
+   Docelowe kolekcje (JUŻ ISTNIEJĄ):
+   - users         → użytkownicy
+   - orders        → zamów i odbierz
+   - reservations → rezerwacje
 ====================================================== */
-// const mongoose = require("mongoose");
-// mongoose.connect(process.env.MONGO_URL);
-
 /*
-  MODELE (DO UTWORZENIA PÓŹNIEJ):
+const mongoose = require("mongoose");
+mongoose.connect(process.env.MONGO_URL);
 
-  User        -> collection: users
-  Reservation -> collection: reservations
-  Order       -> collection: orders
+User        -> collection: users
+Order       -> collection: orders
+Reservation -> collection: reservations
 */
 
 /* ======================================================
-   HELPER – NOT IMPLEMENTED
+   HELPER – ENDPOINT PLACEHOLDER
 ====================================================== */
 function notImplemented(feature, collection) {
   return (req, res) => {
@@ -48,7 +48,8 @@ function notImplemented(feature, collection) {
       ok: false,
       feature,
       targetCollection: collection,
-      message: "Endpoint istnieje, ale logika DB nie jest jeszcze uruchomiona."
+      message:
+        "Endpoint istnieje, ale logika backendu / DB nie jest jeszcze uruchomiona.",
     });
   };
 }
@@ -60,8 +61,7 @@ app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     service: "milk-backend",
-    env: process.env.NODE_ENV || "development",
-    ts: new Date().toISOString()
+    ts: new Date().toISOString(),
   });
 });
 
@@ -115,9 +115,20 @@ app.delete(
 /* ======================================================
    HAPPY BAR / TOP INFO (opcjonalne)
 ====================================================== */
-app.get("/api/data", notImplemented("happybar.public", "happybars"));
-app.get("/api/happy", notImplemented("happybar.admin.get", "happybars"));
-app.post("/api/happy", notImplemented("happybar.admin.set", "happybars"));
+app.get(
+  "/api/data",
+  notImplemented("happybar.public", "happybars")
+);
+
+app.get(
+  "/api/happy",
+  notImplemented("happybar.admin.get", "happybars")
+);
+
+app.post(
+  "/api/happy",
+  notImplemented("happybar.admin.set", "happybars")
+);
 
 /* ======================================================
    ADMIN
@@ -129,18 +140,22 @@ app.get(
 
 /* ======================================================
    FRONTEND (PWA)
+   ------------------------------------------------------
+   app.html leży w ROOT projektu
 ====================================================== */
-const PUBLIC_DIR = path.join(__dirname, "public");
-app.use(express.static(PUBLIC_DIR, { extensions: ["html"] }));
 
-// SPA fallback (ważne!)
+// serwujemy wszystkie pliki statyczne z ROOT
+// (app.html, sw.js, manifest.webmanifest, icons/, itp.)
+app.use(express.static(__dirname));
+
+// SPA fallback – zawsze zwracaj app.html
 app.get("*", (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, "index.html"));
+  res.sendFile(path.join(__dirname, "app.html"));
 });
 
 /* ======================================================
-   START
+   START SERVER
 ====================================================== */
 app.listen(PORT, () => {
-  console.log(`🚀 Milk server running on port ${PORT}`);
+  console.log(`🚀 Milk backend działa na porcie ${PORT}`);
 });
